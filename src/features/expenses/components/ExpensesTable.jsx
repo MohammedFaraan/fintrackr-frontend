@@ -152,7 +152,7 @@ export function ExpensesTable({
                   </td>
 
                   {/* 5. Actions Dropdown */}
-                  <td className="py-4 px-5 align-middle text-center relative whitespace-nowrap">
+                  <td className="py-2 px-5 align-middle text-center relative whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => setOpenMenuId(isMenuOpen ? null : expense.id)}
@@ -169,7 +169,7 @@ export function ExpensesTable({
                           className="fixed inset-0 z-20"
                           onClick={() => setOpenMenuId(null)}
                         />
-                        <div className="absolute right-6 top-10 z-30 w-36 rounded-xl bg-white border border-slate-200 shadow-xl py-1 text-left animate-in fade-in zoom-in-95 duration-150">
+                        <div className="absolute right-3 top-6 z-30 w-36 rounded-xl bg-white border border-slate-200 shadow-xl py-1 text-left animate-in fade-in zoom-in-95 duration-150">
                           <button
                             type="button"
                             onClick={() => {

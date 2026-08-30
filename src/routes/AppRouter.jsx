@@ -5,6 +5,7 @@ import { LoginPage } from "@/features/auth/pages/LoginPage"
 import { SignupPage } from "@/features/auth/pages/SignupPage"
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { ExpensesPage } from "@/features/expenses/pages/ExpensesPage"
+import { BudgetsPage } from "@/features/budgets/pages/BudgetsPage"
 import { DashboardLayout } from "@/layouts/DashboardLayout"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 
@@ -77,18 +78,17 @@ export function AppRouter() {
           }
         />
 
-        {/* Authenticated Feature Routes */}
+        {/* Authenticated Budgets Route */}
         <Route
           path="/budgets"
           element={
             <ProtectedRoute>
-              <ModulePlaceholder
-                title="Budgets"
-                description="Manage spending limits and monitor threshold alerts."
-              />
+              <BudgetsPage />
             </ProtectedRoute>
           }
         />
+
+        {/* Authenticated Feature Routes */}
         <Route
           path="/recurring-expenses"
           element={
