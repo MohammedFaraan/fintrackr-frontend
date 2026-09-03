@@ -7,6 +7,7 @@ import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { ExpensesPage } from "@/features/expenses/pages/ExpensesPage"
 import { BudgetsPage } from "@/features/budgets/pages/BudgetsPage"
 import { ReportsPage } from "@/features/reports/pages/ReportsPage"
+import { RecurringExpensesPage } from "@/features/recurring-expenses/pages/RecurringExpensesPage"
 import { DashboardLayout } from "@/layouts/DashboardLayout"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 
@@ -99,15 +100,12 @@ export function AppRouter() {
           }
         />
 
-        {/* Authenticated Feature Routes */}
+        {/* Authenticated Recurring Expenses Route */}
         <Route
           path="/recurring-expenses"
           element={
             <ProtectedRoute>
-              <ModulePlaceholder
-                title="Recurring Expenses"
-                description="Automate repeating transactions and subscriptions."
-              />
+              <RecurringExpensesPage />
             </ProtectedRoute>
           }
         />
