@@ -1,22 +1,42 @@
-import React, { useEffect } from "react"
+﻿import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { toast } from "sonner"
-import { HiOutlineX, HiOutlineTag, HiOutlineDocumentText, HiOutlineCalendar, HiOutlineCurrencyRupee, HiOutlineRefresh } from "react-icons/hi"
+import {
+  HiOutlineX,
+  HiOutlineTag,
+  HiOutlineDocumentText,
+  HiOutlineCalendar,
+  HiOutlineCurrencyRupee,
+  HiOutlineRefresh,
+} from "react-icons/hi"
 
-const recurringSchema = z.object({
-  description: z.string().trim().min(1, "Name is required").max(100),
-  amount: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: "Amount must be a positive number",
-    }),
-  category: z.string().trim().min(1, "Category is required"),
-  frequency: z.string().min(1, "Frequency is required"),
-  start_date: z.string().min(1, "Start date is required"),
-})
+const recurringSchema = z
+  .object({
+    description: z.string().trim().min(1, "Description is required").max(100),
+    amount: z
+      .string()
+      .min(1, "Amount is required")
+      .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+        message: "Amount must be a positive number",
+      }),
+    category: z.string().trim().min(1, "Category is required"),
+    frequency: z.string().min(1, "Frequency is required"),
+    start_date: z.string().min(1, "Start date is required"),
+    end_date: z.string().optional().or(z.literal("")),
+  })
+  .refine(
+    (data) => {
+      if (data.end_date && data.start_date) {
+        return new Date(data.end_date) >= new Date(data.start_date)
+      }
+      return true
+    },
+    {
+      message: "End date must be on or after start date",
+      path: ["end_date"],
+    }
+  )
 
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"]
 
@@ -51,11 +71,12 @@ export function RecurringExpenseFormModal({
   } = useForm({
     resolver: zodResolver(recurringSchema),
     defaultValues: {
+      description: "",
       amount: "",
       category: "Entertainment",
       frequency: "monthly",
       start_date: today,
-      description: "",
+      end_date: "",
     },
   })
 
@@ -66,13 +87,15 @@ export function RecurringExpenseFormModal({
       setValue("category", initialData.category || "Entertainment")
       setValue("frequency", initialData.frequency || "monthly")
       setValue("start_date", initialData.start_date || today)
+      setValue("end_date", initialData.end_date || "")
     } else {
       reset({
+        description: "",
         amount: "",
         category: "Entertainment",
         frequency: "monthly",
         start_date: today,
-        description: "",
+        end_date: "",
       })
     }
   }, [initialData, isOpen, setValue, reset, today])
@@ -80,24 +103,15 @@ export function RecurringExpenseFormModal({
   if (!isOpen) return null
 
   const onFormSubmit = async (data) => {
-    try {
-      const payload = {
-        description: data.description,
-        amount: Number(data.amount).toFixed(2),
-        category: data.category,
-        frequency: data.frequency,
-        start_date: data.start_date,
-      }
-      await onSubmit(payload)
-      toast.success(isEditing ? "Recurring expense updated!" : "Recurring expense added!")
-      reset()
-      onClose()
-    } catch (err) {
-      const detail = err.response?.data?.detail || "Failed to process recurring expense."
-      toast.error(isEditing ? "Error updating" : "Error adding", {
-        description: typeof detail === "string" ? detail : "Please check your inputs.",
-      })
+    const payload = {
+      description: data.description.trim(),
+      amount: parseFloat(Number(data.amount).toFixed(2)),
+      category: data.category,
+      frequency: data.frequency,
+      start_date: data.start_date,
+      end_date: data.end_date ? data.end_date : null,
     }
+    await onSubmit(payload)
   }
 
   return (
@@ -124,10 +138,10 @@ export function RecurringExpenseFormModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 pt-5" noValidate>
-          {/* Name */}
+          {/* Description */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Name
+              Description
             </label>
             <div className="relative flex items-center">
               <span className="absolute left-3.5 text-slate-400 pointer-events-none">
@@ -153,13 +167,15 @@ export function RecurringExpenseFormModal({
               Amount (₹)
             </label>
             <div className="relative flex items-center">
-              <span className="absolute left-3.5 text-slate-400 font-bold text-sm pointer-events-none">₹</span>
+              <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                <HiOutlineCurrencyRupee className="w-5 h-5" />
+              </span>
               <input
                 type="number"
                 step="0.01"
                 placeholder="0.00"
                 {...register("amount")}
-                className={`w-full h-11 pl-9 pr-4 text-sm rounded-xl border bg-white text-slate-900 focus:outline-none focus:ring-2 transition-all ${
+                className={`w-full h-11 pl-11 pr-4 text-sm rounded-xl border bg-white text-slate-900 focus:outline-none focus:ring-2 transition-all ${
                   errors.amount
                     ? "border-rose-400 focus:ring-rose-400/20"
                     : "border-slate-200 focus:border-[#00b87c] focus:ring-[#00b87c]/20"
@@ -222,10 +238,36 @@ export function RecurringExpenseFormModal({
               <input
                 type="date"
                 {...register("start_date")}
-                className="w-full h-11 pl-11 pr-4 text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-[#00b87c] focus:ring-2 focus:ring-[#00b87c]/20"
+                className={`w-full h-11 pl-11 pr-4 text-sm rounded-xl border bg-white text-slate-900 focus:outline-none focus:ring-2 transition-all ${
+                  errors.start_date
+                    ? "border-rose-400 focus:ring-rose-400/20"
+                    : "border-slate-200 focus:border-[#00b87c] focus:ring-[#00b87c]/20"
+                }`}
               />
             </div>
             {errors.start_date && <p className="text-xs text-rose-500 mt-1">{errors.start_date.message}</p>}
+          </div>
+
+          {/* End Date (Optional) */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              End Date <span className="text-slate-400 font-normal normal-case">(Optional)</span>
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                <HiOutlineCalendar className="w-5 h-5" />
+              </span>
+              <input
+                type="date"
+                {...register("end_date")}
+                className={`w-full h-11 pl-11 pr-4 text-sm rounded-xl border bg-white text-slate-900 focus:outline-none focus:ring-2 transition-all ${
+                  errors.end_date
+                    ? "border-rose-400 focus:ring-rose-400/20"
+                    : "border-slate-200 focus:border-[#00b87c] focus:ring-[#00b87c]/20"
+                }`}
+              />
+            </div>
+            {errors.end_date && <p className="text-xs text-rose-500 mt-1">{errors.end_date.message}</p>}
           </div>
 
           {/* Buttons */}

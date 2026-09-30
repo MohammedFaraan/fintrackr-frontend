@@ -1,11 +1,14 @@
 import React from "react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { Button } from "@/components/ui/button"
-import { HiOutlineCalendar, HiPlus, HiChevronDown } from "react-icons/hi"
+import { HiOutlineCalendar, HiPlus, HiChevronDown, HiOutlineSparkles } from "react-icons/hi"
 
 export function RecurringExpensesHeader({
   dateRangeLabel = "May 1 - May 31, 2025",
   onOpenAddRecurring,
+  onGenerateAll,
+  isGeneratingAll = false,
+  overdueCount = 0,
 }) {
   const { user } = useAuth()
   const userInitial = user?.name
@@ -15,19 +18,26 @@ export function RecurringExpensesHeader({
     : "A"
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
       {/* Title & Subtitle */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-          Recurring Expenses
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+            Recurring Expenses
+          </h1>
+          {overdueCount > 0 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-600 border border-rose-200">
+              {overdueCount} overdue
+            </span>
+          )}
+        </div>
         <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
           Track and manage all your recurring payments in one place.
         </p>
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3 self-start sm:self-auto">
+      <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
         {/* Date / Period Selector Display */}
         <div className="relative inline-block">
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-slate-300 shadow-xs cursor-pointer">
@@ -36,6 +46,19 @@ export function RecurringExpensesHeader({
             <HiChevronDown className="w-3.5 h-3.5 text-slate-400 -ml-0.5 pointer-events-none" />
           </div>
         </div>
+
+        {/* Process Due Payments Button - only visible when there are overdue items */}
+        {overdueCount > 0 && (
+          <button
+            type="button"
+            onClick={onGenerateAll}
+            disabled={isGeneratingAll}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#00b87c]/40 bg-emerald-50 text-xs font-bold text-[#00b87c] hover:bg-emerald-100 shadow-xs transition-all disabled:opacity-60 cursor-pointer"
+          >
+            <HiOutlineSparkles className="w-4 h-4" />
+            <span>{isGeneratingAll ? "Processing..." : "Process Due"}</span>
+          </button>
+        )}
 
         {/* + Add Recurring Expense Button */}
         <Button

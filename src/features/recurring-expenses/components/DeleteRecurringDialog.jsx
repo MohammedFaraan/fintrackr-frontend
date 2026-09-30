@@ -1,9 +1,11 @@
-import React from "react"
+﻿import React from "react"
 import { HiOutlineTrash } from "react-icons/hi"
 import { formatCurrency } from "@/lib/formatters"
 
 export function DeleteRecurringDialog({ isOpen, onClose, onConfirm, item, isDeleting = false }) {
   if (!isOpen || !item) return null
+
+  const displayName = item.description || item.name || "this recurring expense"
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -15,7 +17,7 @@ export function DeleteRecurringDialog({ isOpen, onClose, onConfirm, item, isDele
           <h3 className="text-lg font-bold text-slate-900">Delete Recurring Expense</h3>
           <p className="text-xs text-slate-500 mt-1">
             Are you sure you want to delete{" "}
-            <strong className="text-slate-800">{item.name}</strong> (
+            <strong className="text-slate-800">{displayName}</strong> (
             {formatCurrency(item.amount)}/{item.frequency})? This cannot be undone.
           </p>
         </div>

@@ -35,16 +35,20 @@ export function RecurringExpensesPage() {
     isUpdating,
     deleteRecurringExpense,
     isDeleting,
+    generateOccurrence,
+    isGenerating,
+    generateAll,
+    isGeneratingAll,
   } = useRecurringExpenses()
 
   // Filter recurring expenses client-side
   const filteredExpenses = useMemo(() => {
     return recurringExpenses.filter((item) => {
-      const name = (item.name || "").toLowerCase()
+      const desc = (item.description || "").toLowerCase()
       const cat = (item.category || "").toLowerCase()
       const query = searchQuery.toLowerCase()
 
-      if (query && !name.includes(query) && !cat.includes(query)) return false
+      if (query && !desc.includes(query) && !cat.includes(query)) return false
 
       if (statusFilter === "active" && item.is_active === false) return false
       if (statusFilter === "inactive" && item.is_active !== false) return false
@@ -76,10 +80,21 @@ export function RecurringExpensesPage() {
   }
 
   const handleFormSubmit = async (formData) => {
-    if (editingItem) {
-      await updateRecurringExpense({ id: editingItem.id, data: formData })
-    } else {
-      await createRecurringExpense(formData)
+    try {
+      if (editingItem) {
+        await updateRecurringExpense({ id: editingItem.id, data: formData })
+        toast.success("Recurring expense updated successfully")
+      } else {
+        await createRecurringExpense(formData)
+        toast.success("Recurring expense created successfully")
+      }
+      setIsModalOpen(false)
+      setEditingItem(null)
+    } catch (err) {
+      const detail = err?.response?.data?.detail
+      toast.error("Failed to save", {
+        description: typeof detail === "string" ? detail : "Please check your inputs.",
+      })
     }
   }
 
@@ -102,14 +117,57 @@ export function RecurringExpensesPage() {
     }
   }
 
+  const handleGenerate = async (item) => {
+    try {
+      const result = await generateOccurrence(item.id)
+      if (result.count > 0) {
+        toast.success(`Generated ${result.count} expense${result.count !== 1 ? "s" : ""}`, {
+          description: `Next due: ${result.next_occurrence ?? "N/A"}`,
+        })
+      } else {
+        toast.info("No expenses to generate", {
+          description: "This expense is not yet due or has already been processed.",
+        })
+      }
+    } catch (err) {
+      toast.error("Generation failed", {
+        description: err?.response?.data?.detail || "Please try again.",
+      })
+    }
+  }
+
+  const handleGenerateAll = async () => {
+    try {
+      const result = await generateAll()
+      if (result.count > 0) {
+        toast.success(`Processed ${result.count} expense${result.count !== 1 ? "s" : ""}`, {
+          description: "All due recurring payments have been generated.",
+        })
+      } else {
+        toast.info("Nothing to process", {
+          description: "All recurring expenses are up to date.",
+        })
+      }
+    } catch (err) {
+      toast.error("Failed to process", {
+        description: err?.response?.data?.detail || "Please try again.",
+      })
+    }
+  }
+
   const handleReset = () => {
     setSearchQuery("")
     setStatusFilter("all")
     setSelectedCategory("All Categories")
   }
 
-  // Showing count label
-  const showingLabel = `Showing 1 to ${filteredExpenses.length} of ${filteredExpenses.length} subscription${filteredExpenses.length !== 1 ? "s" : ""}`
+  // Count overdue active items for the header badge
+  const todayStr = new Date().toISOString().split("T")[0]
+  const overdueCount = recurringExpenses.filter(
+    (r) => r.is_active !== false && r.next_occurrence && r.next_occurrence < todayStr
+  ).length
+
+  const showingLabel = `Showing ${filteredExpenses.length} of ${recurringExpenses.length} subscription${recurringExpenses.length !== 1 ? "s" : ""}`
 
   return (
     <DashboardLayout>
@@ -121,6 +179,9 @@ export function RecurringExpensesPage() {
           <RecurringExpensesHeader
             dateRangeLabel={dateRangeLabel}
             onOpenAddRecurring={handleOpenAdd}
+            onGenerateAll={handleGenerateAll}
+            isGeneratingAll={isGeneratingAll}
+            overdueCount={overdueCount}
           />
 
           {/* Summary Cards */}
@@ -160,6 +221,7 @@ export function RecurringExpensesPage() {
                     recurringExpenses={filteredExpenses}
                     onEdit={handleOpenEdit}
                     onDelete={handleOpenDelete}
+                    onGenerate={handleGenerate}
                   />
                   <p className="text-xs text-slate-400 pt-1">{showingLabel}</p>
                 </>

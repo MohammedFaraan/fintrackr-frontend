@@ -39,8 +39,8 @@ export function RecurringExpensesSummaryCards({ recurringExpenses = [], upcoming
   const currentYear = now.getFullYear()
 
   recurringExpenses.forEach((item) => {
-    if (!item.is_active || !item.next_due_date) return
-    const dueDate = new Date(item.next_due_date)
+    if (!item.is_active || !item.next_occurrence) return
+    const dueDate = new Date(item.next_occurrence)
     if (dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear) {
       dueThisMonthAmount += Number(item.amount || 0)
       dueThisMonthCount += 1
@@ -121,3 +121,4 @@ export function RecurringExpensesSummaryCards({ recurringExpenses = [], upcoming
     </div>
   )
 }
+
